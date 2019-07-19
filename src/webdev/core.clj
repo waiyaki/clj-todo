@@ -1,4 +1,5 @@
 (ns webdev.core
+  (:gen-class)
   (:require [ring.adapter.jetty :as jetty]
             [compojure.core :refer [defroutes GET]]
             [compojure.route :refer [not-found]]))
