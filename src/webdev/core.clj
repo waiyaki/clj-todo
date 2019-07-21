@@ -1,9 +1,14 @@
 (ns webdev.core
   (:gen-class)
-  (:require [ring.adapter.jetty :as jetty]
+  (:require [compojure.core :refer [defroutes ANY GET POST PUT DELETE]]
+            [compojure.route :refer [not-found]]
+            [ring.adapter.jetty :as jetty]
+            [ring.middleware.params :refer [wrap-params]]
             [ring.handler.dump :refer [handle-dump]]
-            [compojure.core :refer [defroutes GET]]
-            [compojure.route :refer [not-found]]))
+            [webdev.item.model :as items]))
+
+
+(def db "jdbc:postgresql://localhost/webdev")
 
 
 (defn greet [req]
@@ -52,18 +57,23 @@
        :headers {}})))
 
 
-(defroutes app
+(defroutes routes
   (GET "/" [] greet)
   (GET "/goodbye" [] goodbye)
-  (GET "/about" [] about)
-  (GET "/request" [] handle-dump)
   (GET "/yo/:name" [] yo)
   (GET "/calc/:a/:op/:b" [] calc)
+
+  (GET "/about" [] about)
+  (GET "/request" [] handle-dump)
   (not-found "Page not found."))
+
+
+(def app
+  (wrap-params
+    routes))
 
 
 (defn -main
   [port]
-  (jetty/run-jetty
-    app
-    {:port (Integer. port)}))
+  (items/create-table! db)
+  (jetty/run-jetty app {:port (Integer. port)}))
