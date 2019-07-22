@@ -7,7 +7,8 @@
                  [ring "1.7.1"]
                  [compojure "1.6.1"]
                  [org.clojure/java.jdbc "0.7.9"]
-                 [org.postgresql/postgresql "42.2.6"]]
+                 [org.postgresql/postgresql "42.2.6"]
+                 [hiccup "1.0.5"]]
   :main ^:skip-aot webdev.core
   :target-path "target/%s"
   :min-lein-version "2.0.0"

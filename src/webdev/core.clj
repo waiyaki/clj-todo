@@ -3,9 +3,12 @@
   (:require [compojure.core :refer [defroutes ANY GET POST PUT DELETE]]
             [compojure.route :refer [not-found]]
             [ring.adapter.jetty :as jetty]
+            [ring.middleware.file-info :refer [wrap-file-info]]
             [ring.middleware.params :refer [wrap-params]]
+            [ring.middleware.resource :refer [wrap-resource]]
             [ring.handler.dump :refer [handle-dump]]
-            [webdev.item.model :as items]))
+            [webdev.item.model :as items]
+            [webdev.item.handler :as handler]))
 
 
 (def db "jdbc:postgresql://localhost/webdev")
@@ -64,13 +67,47 @@
   (GET "/calc/:a/:op/:b" [] calc)
 
   (GET "/about" [] about)
-  (GET "/request" [] handle-dump)
+  (ANY "/request" [] handle-dump)
+
+  (GET "/items" [] handler/handle-index-items)
+  (POST "/items" [] handler/handle-create-item)
+  (PUT "/items/:item-id" [] handler/handle-update-item)
+  (DELETE "/items/:item-id" [] handler/handle-delete-item)
+
   (not-found "Page not found."))
 
 
+(defn wrap-db [handler]
+  (fn [req]
+    (handler (assoc req :webdev/db db))))
+
+
+(defn wrap-server [handler]
+  (fn [req]
+    (assoc-in (handler req) [:headers "Server"] "Listronica 9000")))
+
+
+(def sim-methods {"PUT"    :put
+                  "DELETE" :delete})
+
+
+(defn wrap-simulated-methods [handler]
+  (fn [req]
+    (if-let [method (and (= :post (:request-method req))
+                      (sim-methods (get-in req [:params "_method"])))]
+      (handler (assoc req :request-method method))
+      (handler req))))
+
+
 (def app
-  (wrap-params
-    routes))
+  (wrap-server
+    (wrap-file-info
+      (wrap-resource
+        (wrap-db
+          (wrap-params
+            (wrap-simulated-methods
+              routes)))
+        "static"))))
 
 
 (defn -main
