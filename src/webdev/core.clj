@@ -11,7 +11,8 @@
             [webdev.item.handler :as handler]))
 
 
-(def db "jdbc:postgresql://localhost/webdev")
+(def db (or (System/getenv "DATABASE_URL")
+          "jdbc:postgresql://localhost/webdev"))
 
 
 (defn greet [req]
